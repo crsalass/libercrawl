@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.env
+engine/
+data/*
+!data/.gitkeep
+*.pyc
+
+# Personal, local-only files and backups
+.local-backups/
+*.backup*
+*.sqlite3*
+*.db
+*.db-*
+*.tar
+*.zip
+*.log

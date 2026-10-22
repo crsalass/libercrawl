@@ -1,0 +1,6 @@
+chore: rename public web extraction studio to Libercrawl
+
+- Update dashboard title, branding, download filenames and documentation
+- Preserve legacy Docker/SQLite names for backward compatibility
+- Keep third-party attribution and license notices unchanged
+- Review remaining similarity risk with existing LibreCrawl project

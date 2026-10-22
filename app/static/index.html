@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0e14">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'">
+  <title>Libercrawl — Self-hosted Web Studio</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand" aria-label="Libercrawl">
+        <div class="brand-icon" aria-hidden="true"><span>✳</span></div>
+        <div class="brand-copy"><strong>libercrawl</strong><span>SELF-HOSTED STUDIO</span></div>
+      </div>
+      <div class="nav-label">WORKSPACE</div>
+      <nav aria-label="Main navigation">
+        <button type="button" class="nav-item active" data-tab="scrape" aria-current="page"><span aria-hidden="true" class="nav-icon">◇</span> Single scrape</button>
+        <button type="button" class="nav-item" data-tab="batch"><span aria-hidden="true" class="nav-icon">▦</span> Batch scrape</button>
+        <button type="button" class="nav-item" data-tab="crawl"><span aria-hidden="true" class="nav-icon">◎</span> Crawl site</button>
+        <button type="button" class="nav-item" data-tab="map"><span aria-hidden="true" class="nav-icon">⌘</span> Map URLs</button>
+        <button type="button" class="nav-item" data-tab="library"><span aria-hidden="true" class="nav-icon">▤</span> Archive</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="sidebar-footer">OPEN SOURCE <span class="sidebar-sep">·</span> LOCAL BY DEFAULT<br>Libercrawl Studio</div>
+      </div>
+    </aside>
+
+    <main class="main" id="mainContent">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>Libercrawl</span><span class="crumb-divider">/</span><strong id="crumb">Single scrape</strong></div>
+        <div class="topbar-actions"><span class="local-caption">LOCAL INSTANCE</span><div id="engineBadge" class="status-badge offline" role="status"><span class="pulse" aria-hidden="true"></span><span class="engine-label">Checking engine</span></div></div>
+      </header>
+
+      <div class="content">
+        <section class="head-area" aria-labelledby="pageTitle">
+          <div class="eyebrow"><span class="eyebrow-line"></span> YOUR WEB EXTRACTION WORKSPACE</div>
+          <h1 id="pageTitle">Extract the Web.<br><em>Free the data.</em></h1>
+          <p id="pageDescription" class="subheading">Fetch structured information from public webpages, process it with your own local extraction engine, and keep every result under your control.</p>
+        </section>
+
+        <section class="stats" aria-label="Local status summary">
+          <div class="stat"><div class="stat-label">ENGINE STATUS <span class="stat-icon" aria-hidden="true">◉</span></div><div class="stat-value" id="statEngine">Checking…</div><div class="stat-sub">localhost:3002</div></div>
+          <div class="stat"><div class="stat-label">OPERATIONS <span class="stat-icon" aria-hidden="true">↗</span></div><div class="stat-value" id="statJobs">0</div><div class="stat-sub">Stored in your archive</div></div>
+          <div class="stat"><div class="stat-label">PAGES SAVED <span class="stat-icon" aria-hidden="true">▤</span></div><div class="stat-value" id="statPages">0</div><div class="stat-sub">Local SQLite database</div></div>
+        </section>
+
+        <section class="panel operation-panel" id="operationPanel" aria-labelledby="formTitle">
+          <div class="panel-head"><div><div class="panel-eyebrow">CREATE AN OPERATION</div><h2 id="formTitle">Single page scrape</h2><p class="panel-subtitle">Provide a public URL to start extracting.</p></div><span class="pill"><span aria-hidden="true">●</span> LOCAL ENGINE</span></div>
+          <form id="operationForm">
+            <label id="urlLabel" for="urlInput">Website URL</label>
+            <input id="urlInput" type="url" placeholder="https://example.com/product" required autocomplete="off" spellcheck="false">
+            <div id="batchBlock" class="hidden"><label for="batchInput">Website URLs · one per line</label><textarea id="batchInput" rows="6" spellcheck="false" placeholder="https://example.com/product-1&#10;https://example.com/product-2"></textarea><div class="field-help">Each URL is fetched separately. Maximum 30 per batch by default.</div></div>
+            <div id="crawlOptions" class="form-options hidden"><div><label for="limitInput">Page / URL limit</label><input id="limitInput" type="number" min="1" max="50" value="10"></div><div id="depthWrap"><label for="depthInput">Max discovery depth</label><input id="depthInput" type="number" min="0" max="6" value="2"></div></div>
+            <div class="form-bottom"><p class="field-help" id="formHelp">Extract Markdown, HTML, links and deterministic JSON-LD product candidates.</p><button type="submit" id="submitBtn" class="primary-btn"><span class="submit-label">Run local scrape</span><span aria-hidden="true" class="button-arrow">↗</span></button></div>
+          </form>
+          <div id="notice" class="notice hidden" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="panel history" id="historyPanel" aria-labelledby="historyTitle">
+          <div class="panel-head"><div><div class="panel-eyebrow">YOUR ARCHIVE</div><h2 id="historyTitle">Recent operations</h2><p class="panel-subtitle">Review every job and inspect its saved content.</p></div><button type="button" class="subtle-btn" id="refreshBtn"><span aria-hidden="true">↻</span> Refresh</button></div>
+          <div id="archiveNotice" class="notice error hidden" role="alert" aria-live="assertive"></div>
+          <div class="table-wrap"><table><thead><tr><th scope="col">OPERATION</th><th scope="col">PROGRESS</th><th scope="col">STATUS</th><th scope="col">CREATED</th><th scope="col"><span class="sr-only">Action</span></th></tr></thead><tbody id="jobsBody"><tr><td colspan="5" class="empty">No operations yet. Start by extracting a website.</td></tr></tbody></table></div>
+        </section>
+
+        <section class="panel details-panel hidden" id="detailsPanel" tabindex="-1" aria-labelledby="detailTitle">
+          <div class="panel-head"><div><div class="panel-eyebrow">ARCHIVE / INSPECTOR</div><h2 id="detailTitle">Job details</h2><p id="detailSummary" class="detail-sub"></p></div><div class="detail-actions"><button type="button" id="closeDetailsBtn" class="subtle-btn">Close</button><button type="button" id="cancelBtn" class="subtle-btn hidden">Cancel job</button></div></div>
+          <div id="exportToolbar" class="toolbar"><span>EXPORT</span><button type="button" data-format="json">Full JSON</button><button type="button" data-format="jsonl">JSONL</button><button type="button" data-format="csv">CSV</button><button type="button" data-format="markdown">Markdown</button></div>
+          <div id="pageList" class="page-list"></div>
+        </section>
+
+        <footer class="footnote">Your archive is stored locally; requests contact target websites. Keep services on 127.0.0.1 and respect site policies and rate limits.</footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
