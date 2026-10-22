@@ -6,7 +6,7 @@
 
 **A local-first, open-source web extraction studio with a carefully designed dark interface.**
 
-Scrape pages, collect URLs, crawl websites, review results, and export your data — using a **separately downloaded, open-source extraction engine** running on your computer.
+Scrape pages, collect URLs, crawl websites, review results, and export your data using a **separately downloaded, open-source extraction engine** running on your computer.
 
 **Self-hosted** · **No hosted scraping subscription** · **Local SQLite archive** · **No required cloud AI**
 
