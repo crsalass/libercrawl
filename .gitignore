@@ -16,3 +16,26 @@ data/*
 *.tar
 *.zip
 *.log
+
+# Local launch-video compositions, renders, audio and review evidence
+brag-output/
+brag-output-v2/
+brag-output-v3/
+brag-output-v4/
+brag-output*/
+*.mp4
+
+# Private local review notes and adapters
+/docs/FINAL_UI_VISUAL_REVIEW.md
+/docs/README_REVIEW.md
+/docs/UI_REDESIGN_REVIEW.md
+/docs/UI_REFINEMENT_REVIEW.md
+/.agents/skills/libercrawl-ui-stress-review/
+
+# Local secrets, browser state and development caches
+.env.*
+!.env.example
+browser-profile/
+playwright-report/
+test-results/
+.cache/

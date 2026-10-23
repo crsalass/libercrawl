@@ -24,7 +24,7 @@
 
 The pinned Compose stack for this release includes API/workers, Playwright/Chromium, Redis, RabbitMQ, NuQ PostgreSQL, and FoundationDB-related services. FoundationDB is present in the pinned Compose stack even though Libercrawl selects PostgreSQL for its NuQ backend. Presence of an init container with a nonzero exit code does not by itself prove the API is unhealthy; verify the API independently.
 
-`scripts/patch-engine.sh` adjusts the RabbitMQ health check to invoke `rabbitmq-diagnostics` as the `rabbitmq` user (through `gosu`) to avoid a cookie ownership race seen on some installations. The patch is limited to a precise line and may need review when changing engine versions.
+Both platform installers and start scripts invoke the shared [`scripts/patch_engine.py`](../scripts/patch_engine.py) patcher (through `scripts/patch-engine.sh` on Linux). It runs RabbitMQ diagnostics as the `rabbitmq` user through `gosu` and changes its health-check interval/timeout to 10 seconds, retries to 10, and startup grace period to 120 seconds. It validates the service and expected original or patched settings, is idempotent, and rejects unfamiliar layouts. Review it when changing engine versions.
 
 ## Configuration boundaries
 
@@ -40,7 +40,7 @@ MAX_CRAWL_PAGES=50
 MAX_JOB_SECONDS=900
 ```
 
-`MAX_BATCH_URLS`, `MAX_CRAWL_PAGES`, and `MAX_JOB_SECONDS` are clamped by the backend. The current `scripts/start.sh` and `scripts/start.ps1` pass the dashboard host and port explicitly to Uvicorn; modifying `APP_HOST`/`APP_PORT` alone does not override that command.
+`MAX_BATCH_URLS`, `MAX_CRAWL_PAGES`, and `MAX_JOB_SECONDS` are clamped by the backend. The crawl form defaults to 10 pages and depth 2, and its page-limit input allows at most 50 even if the backend cap is raised. The current `scripts/start.sh` and `scripts/start.ps1` pass the dashboard host and port explicitly to Uvicorn; modifying `APP_HOST`/`APP_PORT` alone does not override that command.
 
 **Engine `engine/.env`** is separate. The installer creates an example local configuration with `NUQ_BACKEND=pg`, capped concurrency, a generated `BULL_AUTH_KEY`, `USE_DB_AUTHENTICATION=false`, and empty optional external provider settings. Keep it private. Changing backend implementations or upgrading the upstream release can require other configuration changes.
 
