@@ -1,10 +1,10 @@
 # Install Libercrawl
 
-> This guide covers the **public GitHub edition** of Libercrawl v1.1.3. It installs a **pinned, separately licensed open-source extraction engine**; this is not a hosted scraping service. The original source and licensing details are preserved in [third-party notices](../THIRD_PARTY_NOTICES.md). Installation needs internet for Git, Python packages, container images, and browser dependencies; no hosted scraping account or API key is required.
+> This guide covers the **public GitHub edition** of [Libercrawl](https://github.com/crsalass/libercrawl). It installs a **pinned, separately licensed Firecrawl extraction engine**; this is not a hosted scraping service. The original source and licensing details are preserved in [third-party notices](../THIRD_PARTY_NOTICES.md). Installation needs internet for Git, Python packages, container images, and browser dependencies; no hosted scraping account or API key is required.
 
 ## Before you start
 
-**Recommended machine:** 64-bit, 4+ CPU cores, 16 GB or more RAM, and 50 GB or more free disk space. A machine with 8 GB RAM and 30 GB free disk may work with reduced concurrency but is not guaranteed; smaller machines may fail during browser/container builds. No GPU is needed.
+**Planning estimate:** x86-64, 4+ CPU cores, 16 GB or more RAM available to the workload, and 50 GB or more free disk space, allowing additional resources for the host OS. A machine with 8 GB RAM and 30 GB free disk may work with reduced concurrency but is not guaranteed; smaller machines may fail during browser/container builds. No GPU is needed. These are not benchmarked minimums; ARM compatibility is unverified.
 
 **Tools:** Git, Python 3 with `venv` and pip, Docker Engine, Docker Compose v2, outbound internet, and a modern browser. For Windows, use WSL2 running Ubuntu with systemd support; the required Linux tools run **inside Ubuntu**, not in PowerShell.
 
@@ -31,6 +31,8 @@
    wsl -l -v
    ```
 
+   If Ubuntu is version 1, run `wsl --set-version Ubuntu 2` before continuing.
+
 4. Start Ubuntu from PowerShell:
 
    ```powershell
@@ -39,11 +41,11 @@
 
    `wsl` commands run in **PowerShell**; `sudo`, `apt`, `systemctl`, `docker`, and `bash` run **inside Ubuntu**.
 
-5. Open Ubuntu and follow the Linux installation steps below.
+5. Confirm systemd is available inside Ubuntu with `ps -p 1 -o comm=`. If it is not `systemd`, follow [WSL2 systemd troubleshooting](TROUBLESHOOTING.md#docker-daemon-is-not-running-under-wsl2) before starting Docker. Then follow the Linux installation steps below. This path uses Docker Engine inside Ubuntu; Docker Desktop is not required.
 
 **Security note for Windows 10:** Windows 10 version 22H2 reached end of standard security support in October 2025. Use Windows 11 or an applicable Extended Security Updates (ESU) arrangement for an internet-connected scraping machine. See [Microsoft’s lifecycle guidance](https://learn.microsoft.com/en-us/lifecycle/announcements/windows-10-end-of-support).
 
-**Storage tip:** Place your project under `/home/YOUR_LINUX_USER/libercrawl`, not `/mnt/c/...`, for faster file access. By default, Ubuntu's virtual disk may live on C:. Advanced users can move the **entire WSL distribution** using `wsl --export` and `wsl --import` after stopping Docker, but migration is optional and should be backed up and verified before deleting anything.
+**Storage tip:** Place your project under `~/libercrawl`, not `/mnt/c/...`, for faster file access. By default, Ubuntu's virtual disk may live on C:. Advanced users can move the **entire WSL distribution** using `wsl --export` and `wsl --import` after stopping Docker, but migration is optional and should be backed up and verified before deleting anything.
 
 ## Install on Ubuntu
 
@@ -53,7 +55,7 @@ In Ubuntu:
 
 ```bash
 sudo apt update
-sudo apt install -y git docker.io docker-compose-v2 python3 python3-venv python3-pip
+sudo apt install -y git curl docker.io docker-compose-v2 python3 python3-venv python3-pip
 sudo systemctl enable --now docker
 ```
 
@@ -66,7 +68,7 @@ sudo docker run --rm hello-world
 python3 --version
 ```
 
-Ubuntu package names vary by distribution release. If `docker-compose-v2` is unavailable, follow Docker's [official installation instructions for Ubuntu](https://docs.docker.com/engine/install/ubuntu/) rather than guessing a replacement. If `python3 -m venv` reports missing `ensurepip`, install the matching version-specific package (such as `python3.14-venv`) as indicated by the terminal.
+Ubuntu package names vary by distribution release. On an existing Docker installation, verify its version and Compose plugin first rather than mixing package sources. If `docker-compose-v2` is unavailable, follow Docker's [official installation instructions for Ubuntu](https://docs.docker.com/engine/install/ubuntu/) rather than guessing a replacement. If `python3 -m venv` reports missing `ensurepip`, install the matching version-specific package indicated by the terminal.
 
 ### 2. Docker permissions
 
@@ -76,29 +78,29 @@ The Docker socket is typically accessible only to `root` or members of the `dock
 sudo usermod -aG docker "$USER"
 ```
 
-Then **exit Ubuntu**, return to Windows PowerShell and run:
+On native Linux, log out and back in to refresh group membership. On WSL2, save work in all distributions, **exit Ubuntu**, and run these commands in Windows PowerShell (`wsl --shutdown` stops all running distributions):
 
 ```powershell
 wsl --shutdown
 wsl -d Ubuntu
 ```
 
-Verify inside Ubuntu:
+Verify in your Linux terminal after signing back in or restarting Ubuntu:
 
 ```bash
 groups
 docker ps
 ```
 
-`docker ps` should work without `sudo`. **Security warning:** `docker` group access is effectively root-equivalent. Do not add untrusted accounts. On native Linux, logging out and back in typically refreshes group membership.
+`docker ps` should work without `sudo`. **Security warning:** `docker` group access is effectively root-equivalent. Do not add untrusted accounts.
 
 ### 3. Get Libercrawl
 
-After creating a GitHub repository, clone its URL (replace the placeholder):
+Clone the public repository inside your Linux home directory:
 
 ```bash
 cd ~
-git clone https://github.com/YOUR_USERNAME/libercrawl.git
+git clone https://github.com/crsalass/libercrawl.git
 cd libercrawl
 ```
 

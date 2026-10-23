@@ -24,6 +24,10 @@ The dashboard's SQLite archive contains URLs and scraped content, possibly inclu
 
 Do not scrape private personal information or content you are not authorized to access. Respect website terms, applicable laws, copyright, robots policies where appropriate, and rate limits.
 
+### Untrusted content and downloads
+
+Scraped pages, URLs, metadata, and product fields are untrusted input. Inspect presents page content as text; HTML retained in JSON/JSONL exports must still be handled safely by downstream tools. CSV export uses ordinary CSV quoting but does **not** sanitize cell values against spreadsheet-formula injection. Import candidate data as text and review it before opening it in spreadsheet software or sharing it.
+
 ## Back up your Libercrawl archive
 
 Archive file: `data/embercrawl.sqlite3`. Because SQLite uses **WAL journaling**, do not assume that copying only the open database file captures all recent writes. Use SQLite's online backup API (included with Python):

@@ -4,216 +4,225 @@
 
 ### Extract the Web. Free the data.
 
-**A local-first, open-source web extraction studio with a carefully designed dark interface.**
+A local-first web extraction workspace for developers and researchers.
 
-Scrape pages, collect URLs, crawl websites, review results, and export your data using a **separately downloaded, open-source extraction engine** running on your computer.
+**Self-hosted · SQLite archive · JSON / JSONL / Markdown / CSV**
 
-**Self-hosted** · **No hosted scraping subscription** · **Local SQLite archive** · **No required cloud AI**
+[Get started](#installation) · [Features](#features) · [Architecture](#architecture) · [Documentation](#documentation)
 
 </div>
 
----
+![Libercrawl public dashboard: dark interface with scrape, batch, crawl, map and archive navigation; engine offline and archive empty.](docs/assets/public-dashboard.png)
 
-## What is Libercrawl?
+<p align="center"><sub>Actual public dashboard running in an isolated local environment. Empty archive; extraction engine offline. <a href="docs/assets/README.md">Screenshot provenance</a>.</sub></p>
 
-Libercrawl is a desktop-friendly **web application** that provides a polished interface for running a separately licensed, locally deployed extraction engine. It consists of a Python/FastAPI dashboard and a separate service launched through Docker Compose. You work in your browser; scraping and storage are handled by local services.
+Libercrawl brings single-page scraping, bounded crawls, URL discovery, and saved results into one browser interface. A Python/FastAPI application manages jobs and a local SQLite archive; a separately installed **[Firecrawl extraction engine](THIRD_PARTY_NOTICES.md)** fetches the pages through Docker Compose.
 
-Libercrawl is designed for developers, researchers, data practitioners, and anyone who prefers to **own their extraction workflow**, rather than depend on a hosted scraping dashboard.
+The public edition uses no hosted scraping account, API credits, or cloud AI for its normal workflows. Its frontend uses vanilla HTML, CSS, JavaScript, and system fonts, with no CDN assets or tracking scripts. Installation downloads dependencies, and extraction contacts target websites: **local-first does not mean offline**.
 
-> **Independent software.** Libercrawl is an independently maintained interface to an external open-source engine. See [third-party notices](THIRD_PARTY_NOTICES.md) for source, license, modifications, and non-affiliation.
+## Features
 
-### Features
-
-| Feature | What it does |
+| Workflow | Public-edition behavior |
 | --- | --- |
-| **Single scrape** | Extracts one public HTTP/HTTPS webpage through the local extraction engine, including Markdown and HTML when returned by the engine. |
-| **Batch scrape** | Processes a list of URLs in a single dashboard job (processed sequentially by Libercrawl, not a remote batch API). |
-| **Website crawl** | Requests a bounded, depth-limited crawl with progress tracking and a Cancel action. |
-| **URL map** | Discovers linked URLs without storing full page bodies; results export as JSON. |
-| **Archive** | Stores job history and scraped pages in a local SQLite database. |
-| **Inspect** | Opens job details, extracted-content previews, detected product information, and errors. |
-| **Exports** | Downloads JSON, JSONL, Markdown, or CSV where appropriate. |
-| **Product hints** | Attempts *deterministic* product-field extraction from page JSON-LD and HTML metadata; does not require an LLM. |
-| **Dark UI** | Responsive charcoal interface, restrained accents, and local system fonts without remote design assets. |
+| **Single scrape** | Extract one public HTTP/HTTPS page; retain available Markdown, HTML, links, and metadata. |
+| **Batch scrape** | Process a deduplicated URL list sequentially inside one job; retain successful pages and report failures. Default cap: 30 URLs. |
+| **Crawl site** | Request a crawl with page and discovery-depth limits, poll progress, and offer cancellation. Form defaults: 10 pages, depth 2; default backend cap: 50 pages. |
+| **Map URLs** | Discover URLs without archiving page bodies. Default request: 30 links; request limit: 250. |
+| **Archive & Inspect** | Review saved operations, page previews, product-field candidates, progress, and errors. The list shows the latest 75 jobs. |
+| **Product hints** | Parse Product/ProductGroup JSON-LD and HTML metadata locally, with provenance and missing-field indicators. No LLM is used to fill gaps. |
 
-Product fields are **best-effort candidates**, not verified records. Missing sizes, variants, prices, or materials remain missing; data quality depends on the source website. AI-based extraction is **not included in this dashboard**.
+Product hints are **best-effort candidates**. Prices, sizes, variants, and other fields depend on what the source supplies and need verification. This dashboard does not provide AI extraction, CAPTCHA bypass, or guaranteed access to every website.
 
-### What makes it different?
+### Export formats
 
-- **No hosted scraping API key or credits** are required for Libercrawl's default workflows.
-- The **dashboard only accepts a local extraction-engine endpoint** (`localhost`, `127.0.0.1`, or `::1`).
-- Scraped job history lives in **SQLite on your computer**, not a hosted database.
-- A pinned third-party engine source checkout helps make installations reproducible.
-- You can inspect, modify, and self-host the app's code under its open-source license.
+Downloads are available from **Archive → Inspect**.
 
-**Important distinction:** Self-hosted does *not* mean offline. Initial installation downloads source, packages, and container images. Scraping itself sends requests to target websites. Internet, electricity, computer resources, and any optional services still have costs.
-
-## System requirements
-
-These are **practical estimates for the multi-container stack, not official benchmarks or hard guarantees**. The first build can be substantial, especially on Windows with WSL2.
-
-| Requirement | Minimum to try | Recommended |
+| Format | Contents | Supported jobs |
 | --- | --- | --- |
-| **OS** | 64-bit Linux with Docker; or Windows 10/11 with WSL2 Ubuntu | Current Ubuntu LTS on Linux or WSL2 |
-| **CPU** | 2 modern x86-64 cores (may be slow) | 4+ cores |
-| **RAM** | 8 GB physical RAM (tight; may fail under load) | 16 GB+, especially for browser-based crawling |
-| **Free disk space** | 30 GB before first build | 50 GB+ for images, builds, logs, and collected data |
+| **JSON** (`.json`) | Job record and stored pages, including HTML, Markdown, metadata, links, and product candidates; map URLs live in the job's `links` array. | All |
+| **JSONL** (`.jsonl`) | One stored page object per line. | Scrape, batch, crawl |
+| **Markdown** (`.md`) | Page titles, source URLs, and stored Markdown, separated into one document. | Scrape, batch, crawl |
+| **CSV** (`.csv`) | Product-oriented columns: URL, name, brand, SKU, price, currency, sizes, colors, material, and missing fields. | Scrape, batch, crawl |
+
+CSV is a candidate-data export, not a verified product catalog. HTML is included in stored page records and JSON/JSONL exports; there is no standalone HTML download. See the [user guide](docs/USER_GUIDE.md) for content caps and preview limits.
+
+## Requirements
+
+The extraction engine runs several containers, including a browser service. These are **planning estimates**, not benchmarked minimums or performance guarantees.
+
+| Resource | To try the stack | Recommended |
+| --- | --- | --- |
+| **OS** | 64-bit Linux, or Windows with WSL2 Ubuntu | Supported Ubuntu LTS; Windows 11 + WSL2 Ubuntu |
+| **CPU** | 2 modern x86-64 cores | 4+ cores |
+| **RAM** | 8 GB; builds or workloads may fail | 16 GB+ available to the workload, allowing for the host OS |
+| **Free disk** | 30 GB before the first build | 50 GB+ for images, builds, logs, and archives |
 | **GPU** | Not required | Not required |
-| **Network** | Internet for installation and target sites | Stable broadband |
-| **Software** | Git, Docker Engine, Docker Compose v2, Python 3 with `venv` | Up-to-date packages, Docker service managed by systemd |
+| **Tools** | Git, Python 3 with `venv`/pip, Docker Engine, Docker Compose v2, a modern browser | Internet access for installation and target websites |
 
-The full installed system can occupy tens of gigabytes; actual footprint varies by OS, browser images, caches, and archive size. Check usage with `docker system df`, `du -sh ~/libercrawl`, and `df -h ~`.
+Linux/WSL2 is the documented setup. Native Windows PowerShell scripts are included but have not been equivalently validated; macOS and ARM deployments are unverified. The recommended WSL2 path runs Docker Engine inside Ubuntu and does not require Docker Desktop. Windows 10 users should review the [support and ESU guidance](docs/INSTALL.md#install-with-windows--wsl2).
 
-**Windows security:** Windows 10 reached end of standard support on October 14, 2025. For an internet-connected scraping machine, use Windows 11 or a supported Windows 10 Extended Security Updates (ESU) arrangement. See [Microsoft’s notice](https://learn.microsoft.com/en-us/lifecycle/announcements/windows-10-end-of-support).
+## Installation
 
-**Software compatibility:** The Linux/WSL2 path is the field-tested setup. Windows PowerShell scripts are included, but **native Windows/Docker Desktop operation has not been equivalently validated**. Docker Desktop is not required for the recommended path.
+### Windows with WSL2
 
-## Quick start — Linux / WSL2 Ubuntu
+In **PowerShell as Administrator**, install Ubuntu if WSL is not already set up:
 
-> Complete Windows-specific setup is in **[docs/INSTALL.md](docs/INSTALL.md)**. Read it if Docker or WSL2 is not installed.
+```powershell
+wsl --install -d Ubuntu
+```
+
+Restart if prompted and complete Ubuntu's first-run user setup. In **PowerShell**, verify that Ubuntu uses WSL version **2**, then open it:
+
+```powershell
+wsl -l -v
+wsl -d Ubuntu
+```
+
+If Ubuntu is listed as version 1, run `wsl --set-version Ubuntu 2` first. Follow the Linux steps below **inside Ubuntu**. Keep the checkout under `~/libercrawl` for Linux filesystem performance. See the [full WSL2 guide](docs/INSTALL.md#install-with-windows--wsl2) and [Microsoft's installation instructions](https://learn.microsoft.com/en-us/windows/wsl/install).
+
+### Linux / Ubuntu
+
+On a fresh supported Ubuntu installation, install prerequisites:
 
 ```bash
-# 1. Install prerequisites in Ubuntu (package names can vary by release)
 sudo apt update
-sudo apt install -y git docker.io docker-compose-v2 python3 python3-venv python3-pip
+sudo apt install -y git curl docker.io docker-compose-v2 python3 python3-venv python3-pip
 sudo systemctl enable --now docker
+docker compose version
+docker ps
+```
 
-# 2. Clone the repository (replace the placeholder with YOUR repository URL)
-git clone https://github.com/YOUR_USERNAME/libercrawl.git
+Package availability varies by Ubuntu release. If Compose v2 is unavailable, follow [Docker's Ubuntu instructions](https://docs.docker.com/engine/install/ubuntu/); avoid mixing Docker package sources. If `docker ps` reports a permissions error, complete [Docker permissions](docs/INSTALL.md#2-docker-permissions) before continuing. The `docker` group grants root-equivalent access. WSL2 also needs systemd enabled; see [troubleshooting](docs/TROUBLESHOOTING.md#docker-daemon-is-not-running-under-wsl2).
+
+Clone and install:
+
+```bash
+cd ~
+git clone https://github.com/crsalass/libercrawl.git
 cd libercrawl
-
-# 3. Install the local application and the pinned extraction engine source
 bash scripts/install.sh
-
-# 4. Build/start the engine and run the dashboard
 bash scripts/start.sh
 ```
 
-In your browser, open **http://127.0.0.1:3210**.
+The installer downloads and checks the pinned engine source, applies its documented compatibility patch, creates local configuration and a Python environment, and installs dashboard dependencies. The start script builds and launches the engine containers, then runs the dashboard in the foreground. The first build can take substantial time and disk space.
 
-The local extraction API is published on **http://127.0.0.1:3002**. Neither endpoint should be exposed directly to the public internet.
+Open **[127.0.0.1:3210](http://127.0.0.1:3210)**. The extraction API is configured at `http://127.0.0.1:3002`. Keep both services restricted to loopback.
 
-If your Ubuntu account cannot talk to Docker, see the [Docker permissions section](docs/INSTALL.md#docker-permissions). If your Python virtual environment fails with `ensurepip is not available`, see [Troubleshooting](docs/TROUBLESHOOTING.md#python-venv-or-ensurepip-is-missing).
+### Verify your first extraction
 
-### Verify the installation
+1. Wait for **Engine online** in the dashboard.
+2. In **Single scrape**, submit `https://example.org`.
+3. Open **Archive → Inspect** for the completed job and check its extracted content.
+4. Download JSON or Markdown and review the result.
 
-```bash
-# In another terminal, while Libercrawl is running:
-docker ps
-curl -s http://127.0.0.1:3210/api/status
+For diagnostics, run `curl -s http://127.0.0.1:3210/api/status` in another Ubuntu terminal. **Online only confirms API responsiveness**: the health probe deliberately sends an empty scrape request and expects HTTP 400/422. A completed scrape is the end-to-end check.
 
-# Basic route reachability (HTTP 400 or 422 is expected: no URL supplied)
-curl -i -X POST http://127.0.0.1:3002/v2/scrape \
-  -H 'Content-Type: application/json' -d '{}'
-```
+### Stop and restart
 
-An **Online** status only means the local extraction API is responding. To verify end-to-end scraping, submit `https://example.org` using **Single scrape** and check that the completed job contains Markdown in **Archive → Inspect**.
-
-### Start and stop
+Press `Ctrl+C` in the dashboard terminal, then stop the engine containers:
 
 ```bash
-bash scripts/start.sh       # Start engine containers + dashboard (foreground)
-# Ctrl+C                    # Stop dashboard only
-bash scripts/stop.sh        # Stop engine containers; retains local SQLite archive
+bash scripts/stop.sh
 ```
 
-`start.sh` may rebuild source-based containers on future runs; previously completed layers are cached where possible. Run `scripts/stop.sh` from a separate terminal after stopping the dashboard.
+The SQLite archive is retained. Start again with `bash scripts/start.sh`; builds reuse cached layers where possible. Unfinished dashboard jobs do not resume after a restart.
 
-## How to use it
+## Architecture
 
-1. Open **http://127.0.0.1:3210** and check the **Engine online** indicator.
-2. Choose **Single scrape**, **Batch scrape**, **Crawl site**, or **Map URLs**.
-3. Enter public website URLs and choose available limits.
-4. Submit the job, then open **Archive**.
-5. Click **Inspect** to review the results, detected product fields, and errors; download an export if desired.
-
-For output formats, job limits, data retention, and current feature limitations, see **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)**.
-
-## Architecture at a glance
-
-```text
-Your browser (127.0.0.1:3210)
-        |
-        v
-Libercrawl Dashboard  [FastAPI + local static HTML/CSS/JS]
-        |                 \
-        |                  +--> SQLite archive  [data/embercrawl.sqlite3]
-        v
-Local extraction API (127.0.0.1:3002)
-        |
-        +--> Playwright/Chromium
-        +--> Redis / RabbitMQ
-        +--> PostgreSQL (NuQ queue)
-        +--> FoundationDB services present in pinned Compose stack
-        |
-        v
-Public target websites (outbound internet requests)
+```mermaid
+flowchart TD
+    Browser["Browser · 127.0.0.1:3210"] --> Dashboard["FastAPI dashboard + local HTML / CSS / JS"]
+    Dashboard --> Archive[("SQLite archive")]
+    Dashboard --> Candidates["Deterministic JSON-LD / metadata parser"]
+    Candidates --> Archive
+    Dashboard --> Engine["Local Firecrawl API · 127.0.0.1:3002"]
+    subgraph Compose["Separate upstream Docker Compose stack"]
+        Engine --> BrowserService["Playwright / Chromium"]
+        Engine --> Queues["Redis · RabbitMQ · PostgreSQL / NuQ"]
+    end
+    Engine --> Websites["Public target websites"]
+    BrowserService --> Websites
 ```
 
-The installer clones the **exact source revision** documented in [third-party notices](THIRD_PARTY_NOTICES.md) into the Git-ignored `engine/` directory. It applies a small RabbitMQ health-check compatibility patch and configures `NUQ_BACKEND=pg`. This release pin is intentional: the upstream project's newest installation instructions may describe a newer version and **should not be mixed blindly with this release's Compose file**.
+The dashboard and extraction engine are separate services. Job creation returns **HTTP 202** and records a queued operation in SQLite. In-process async workers run at most **two jobs** at once; batches fetch URLs sequentially, while crawls poll the upstream job. Available page data is archived before inspection or export. SQLite uses WAL mode and per-job URL deduplication.
 
-Details: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+The installer pins Firecrawl **`v2.11.0`**, commit **`ef12eb36b2f3382838dfe0a0c1a5add3d5df7fe5`**, rather than following upstream `main`. It selects PostgreSQL for NuQ (`NUQ_BACKEND=pg`); FoundationDB services are also present in the pinned Compose file. A shared patcher adjusts RabbitMQ's health-check user and startup timings. See [architecture and configuration](docs/ARCHITECTURE.md) and [upstream attribution](THIRD_PARTY_NOTICES.md).
 
-## Configuration
+### Configuration
 
-Libercrawl's `.env` is created from [`.env.example`](.env.example) during installation. Important settings:
+Installation copies [`.env.example`](.env.example) to the dashboard's `.env`. The extraction engine has a separate `engine/.env`.
 
-| Variable | Default | Purpose |
+| Dashboard setting | Default | Effective constraint |
 | --- | --- | --- |
-| `LOCAL_ENGINE_URL` | `http://127.0.0.1:3002` | Local-only engine endpoint |
-| `APP_HOST` | `127.0.0.1` | Dashboard bind-address setting (see note) |
-| `APP_PORT` | `3210` | Dashboard port setting (see note) |
-| `APP_DATA_DIR` | `./data` | Local SQLite data directory |
-| `MAX_BATCH_URLS` | `30` | Maximum URLs per batch, capped at 100 in code |
-| `MAX_CRAWL_PAGES` | `50` | Maximum crawl pages per job, capped at 250 in code |
-| `MAX_JOB_SECONDS` | `900` | Per-job timeout in seconds; capped to 60–3600 |
+| `LOCAL_ENGINE_URL` | `http://127.0.0.1:3002` | HTTP on `localhost`, `127.0.0.1`, or `::1`, with an explicit port |
+| `APP_DATA_DIR` | `./data` | Stores `embercrawl.sqlite3`; legacy filename retained for compatibility |
+| `MAX_BATCH_URLS` | `30` | Clamped to 1–100 URLs per batch |
+| `MAX_CRAWL_PAGES` | `50` | Backend cap clamped to 1–250; the UI permits up to 50 |
+| `MAX_JOB_SECONDS` | `900` | Clamped to 60–3,600 seconds per job |
 
-**Note:** The shipped `start.sh` explicitly binds Uvicorn to `127.0.0.1:3210`; changing `APP_HOST`/`APP_PORT` alone does **not** change that startup command. Use a reviewed startup-script change if a different local port is needed. Keep the service local.
+Both start scripts explicitly bind Uvicorn to **`127.0.0.1:3210`**. Changing `APP_HOST` or `APP_PORT` in `.env` alone does not change that binding. The Docker project name remains `embercrawl-engine` for compatibility with existing installs.
 
-The separately downloaded engine's `engine/.env` contains engine-specific settings such as `NUQ_BACKEND=pg`. **Never commit either `.env` file.** See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#configuration-boundaries).
+## Security and limitations
 
-## Security and privacy
+**Use Libercrawl as a trusted local tool.** The dashboard has no login, and the default extraction API disables database authentication. Neither is designed for public or shared-network exposure.
 
-Libercrawl is designed for **trusted local use**, not for exposing to strangers. The default extraction-engine API has authentication disabled; its network exposure must remain restricted to loopback. The dashboard also has no account/login system. Target URL checks block common local/private-address targets, but they are not a substitute for network isolation or a comprehensive defense against SSRF and redirects.
+- **Target checks have limits.** The app accepts public HTTP/HTTPS domain URLs on standard ports and rejects IP targets, embedded credentials, fragments, and common internal addresses. DNS checks do not comprehensively prevent SSRF, redirects, or DNS rebinding; use network isolation for untrusted workloads.
+- **Web content and exports are untrusted.** Protect the local archive and backups. Review scraped files before sharing or opening them; CSV values are not sanitized against spreadsheet-formula injection.
+- **Scraping uses the network.** Target sites and intermediaries can observe requests. Respect access permissions, site policies, rate limits, and applicable data-handling rules.
+- **Jobs are not durable workers.** After a dashboard restart, queued/running records become interrupted. There is no automatic resumption or distributed dashboard queue.
+- **Crawl results can be incomplete.** The dashboard does not follow the engine's completed-crawl pagination links. Site restrictions and browser failures can also prevent extraction.
+- **Storage and previews are bounded.** Stored HTML and Markdown are each capped at 4 million characters per page; Inspect shows up to 6,000 Markdown characters. The latest-75 archive view is not automatic data deletion.
+- **The stack needs deployment review.** The upstream Compose setup is a development baseline. Source pins do not pin every Python dependency or container image; persistence, security updates, and dependency licenses need separate review before production use or binary redistribution.
 
-The Libercrawl frontend does not require telemetry, CDN assets, or remote fonts. The dashboard archives results in local SQLite; outbound requests reach target websites and may be logged by those websites and network intermediaries. See [docs/SECURITY_AND_BACKUPS.md](docs/SECURITY_AND_BACKUPS.md) for safe deployment, backup, and retention guidance.
+See [security, privacy, and backups](docs/SECURITY_AND_BACKUPS.md) for the threat model and WAL-safe SQLite backups.
 
-## Limitations
+## Development
 
-- Not all features of a hosted extraction service are included in the open-source engine or surfaced by this UI.
-- No built-in hosted AI, model account, or guaranteed structured-product extraction.
-- Crawls are bounded, and the current dashboard does **not** follow completed-crawl pagination links; very large crawls may require further work.
-- Dashboard job execution is in-process. Running/queued jobs are marked interrupted after a dashboard restart; this is not a durable distributed task queue.
-- The default engine Compose setup is a **local development baseline, not a hardened production deployment**. Some queue service data may not persist across destructive service replacement.
-- The UI permits public domain URLs, not arbitrary internal network targets.
+The public application is small enough to inspect directly:
+
+| Path | Responsibility |
+| --- | --- |
+| [`app/main.py`](app/main.py) | FastAPI routes, job orchestration, inspection, exports |
+| [`app/engine.py`](app/engine.py) · [`app/security.py`](app/security.py) | Local engine client and URL validation |
+| [`app/storage.py`](app/storage.py) · [`app/product.py`](app/product.py) | SQLite persistence and deterministic product parsing |
+| [`app/static/`](app/static/) | Responsive dark dashboard with local system fonts |
+| [`scripts/`](scripts/) · [`tests/`](tests/) | Installation, compatibility patch, and offline regression suite |
+
+To work on the dashboard without installing the extraction engine, use a disposable environment and data directory:
+
+```bash
+python3 -m venv .local-backups/dev-venv
+source .local-backups/dev-venv/bin/activate
+python -m pip install -r requirements-dev.txt
+export APP_DATA_DIR="$PWD/.local-backups/dev-data"
+python -m pytest -q
+node --check app/static/app.js
+python -m uvicorn app.main:app --host 127.0.0.1 --port 3210
+```
+
+Node.js is needed only for the JavaScript syntax check. The dashboard displays **Engine offline** until a local engine is running. Interactive API documentation is available at `/api/docs` on the dashboard. Tests use fake or mocked engine responses and do not verify a full Docker deployment; run the [first extraction check](#verify-your-first-extraction) after installing the engine.
+
+See [dashboard regression checks](docs/UI_TESTING.md) for the optional isolated browser and accessibility suite.
+
+Read [AGENTS.md](AGENTS.md) before changes. Keep the public edition general-purpose, preserve the minimal frontend, and keep runtime engines, environments, secrets, databases, and scraped data out of source control.
 
 ## Documentation
 
-- **[Installation & requirements](docs/INSTALL.md)** — Linux and Windows/WSL2 setup; first run.
-- **[User guide](docs/USER_GUIDE.md)** — workflows, archive, exports, limits.
-- **[Architecture & configuration](docs/ARCHITECTURE.md)** — internals and upstream version pin.
-- **[Troubleshooting](docs/TROUBLESHOOTING.md)** — WSL DNS, permissions, Python, RabbitMQ, API offline, browser builds.
-- **[Security & backups](docs/SECURITY_AND_BACKUPS.md)** — trust boundaries, backups, data hygiene.
-- **[Publishing checklist](docs/GITHUB_PUBLISHING.md)** — safe first commit, license, secrets, and release notes.
-- **[Codex task](docs/CODEX_TASK.md)** — optional UI review with the bundled repository skill.
+| Guide | Contents |
+| --- | --- |
+| [Installation](docs/INSTALL.md) | Linux and WSL2 prerequisites, permissions, first run |
+| [User guide](docs/USER_GUIDE.md) | Workflows, exports, limits, cancellation |
+| [Architecture](docs/ARCHITECTURE.md) | Components, engine pin, configuration boundaries |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Engine status, Docker, WSL2, browser builds, Inspect |
+| [Security & backups](docs/SECURITY_AND_BACKUPS.md) | Local trust model, retention, recovery |
+| [Publication review](docs/GITHUB_PUBLISHING.md) | Source hygiene and release checks |
 
-## Development and tests
+[SHA256SUMS.txt](SHA256SUMS.txt) records source and documentation checksums; it is an integrity manifest, not a signed authenticity guarantee. On Linux/WSL2, verify with `sha256sum -c SHA256SUMS.txt` using checkout bytes without line-ending conversion.
 
-```bash
-# After install.sh (which creates .venv):
-.venv/bin/python -m pip install -r requirements-dev.txt
-.venv/bin/python -m pytest -q
-node --check app/static/app.js  # optional: requires Node.js installed on host
-```
+## License and attribution
 
-The existing release has a 23-test offline Python suite. Offline tests use mocks and **do not establish that a complete local extraction-engine deployment works on every machine**. A real scraping smoke test remains necessary after installation.
+Libercrawl application source and documentation are offered under **GNU AGPL-3.0-or-later**. See the full [LICENSE](LICENSE) and [license scope](LICENSE_SCOPE.md).
 
-## License, attribution and publication checks
+The separately downloaded **[Firecrawl engine](https://github.com/firecrawl/firecrawl/tree/ef12eb36b2f3382838dfe0a0c1a5add3d5df7fe5)** is maintained by its own contributors and retains its upstream licenses and notices. Libercrawl is an independent interface and is not endorsed by the upstream maintainers. [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) preserves source provenance, version, licenses, and the local compatibility modification; retain these notices in source distributions.
 
-Libercrawl source is offered under **GNU AGPL-3.0-or-later**. See [LICENSE](LICENSE) and [LICENSE_SCOPE.md](LICENSE_SCOPE.md). The separately downloaded engine and dependencies retain their own copyright and license obligations. **Required attribution, upstream source details and modifications** are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-**Before publishing under this name:** [review the existing name collision and outstanding release risks](docs/PRE_PUBLICATION_RISK_REVIEW.md).
-
----
-
-<div align="center"><strong>Extract the Web. Free the data.</strong></div>
+The existing [name-similarity and release-risk review](docs/PRE_PUBLICATION_RISK_REVIEW.md) remains relevant before publication.

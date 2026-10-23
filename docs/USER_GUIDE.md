@@ -16,7 +16,7 @@ The batch may finish with partial results and a job error message for failed ind
 
 ### Crawl site
 
-Provide a starting website URL and choose a page limit and discovery depth. The app runs a bounded crawl on the local extraction backend; external links are disallowed in the submitted options. The default maximum is **50 pages** and **2 levels** of depth. The UI/backend supports depth **0 to 6**, and a configurable crawl cap that cannot exceed 250 pages.
+Provide a starting website URL and choose a page limit and discovery depth. The app runs a bounded crawl on the local extraction backend; external links are disallowed in the submitted options. The form defaults to **10 pages** and **depth 2**. The UI permits up to **50 pages**; the default backend cap is also 50. The UI/backend supports depth **0 to 6**. The configurable backend crawl cap cannot exceed 250 pages; changing it does not change the UI's 50-page input maximum.
 
 Current limitation: Libercrawl does **not** follow `next` pagination links in the final engine crawl response, so large crawls may not archive every returned page. It stores unique pages by URL **within each job**, not globally across all jobs.
 
@@ -28,7 +28,7 @@ Provide a domain or webpage to discover URLs. By default, the UI requests **30 d
 
 Every operation appears in **Archive** with its kind, status, progress, creation time, and an **Inspect** button. Inspect opens an accessible detail area with page previews, extracted product hints, completed counts, and reported errors. It also shows a visible message if details cannot be loaded.
 
-The app saves up to the latest **75 job summaries** in the Archive list. Existing older jobs are not necessarily removed from SQLite; this is a display-query limit.
+The Archive list displays the latest **75 job summaries**. Its operation and saved-page counters summarize this list, not the entire database. Older jobs remain in SQLite; this is a display-query limit, not a retention policy. There is no archive-deletion control in the dashboard.
 
 The archive is stored at `data/embercrawl.sqlite3` (the legacy filename is deliberately retained for compatibility). By default, scraped HTML and Markdown content are capped at **4 million characters** per page when stored, and Inspect previews display up to **6,000 Markdown characters** per page. Exports can include more stored content than the Inspect preview.
 
@@ -36,12 +36,12 @@ The archive is stored at `data/embercrawl.sqlite3` (the legacy filename is delib
 
 | Format | Content | Notes |
 | --- | --- | --- |
-| **JSON** | Job metadata and all stored pages | Works for all job kinds, including URL maps. |
+| **JSON** | Job metadata and all stored pages, including HTML, Markdown, links, metadata, and product candidates | Works for all job kinds; map URLs are in the job's `links` array. |
 | **JSONL** | One JSON object per scraped page | For non-map jobs. |
 | **Markdown** | Readable Markdown text for stored pages | For non-map jobs. |
 | **CSV** | One row per page with product-oriented columns | For non-map jobs; useful for inspection, not a guaranteed product catalog. |
 
-The CSV includes URL, name, brand, SKU, price, currency, sizes, colors, material, and missing-field indicators. It is a **candidate export**, not a verified commerce feed.
+The CSV includes URL, name, brand, SKU, price, currency, sizes, colors, material, and missing-field indicators. It is a **candidate export**, not a verified commerce feed. Scraped cell values are not sanitized against spreadsheet-formula injection; import as text and review untrusted exports before opening them in a spreadsheet. HTML is available inside JSON/JSONL page records, not as a standalone HTML download.
 
 ## Product hints
 
@@ -54,7 +54,7 @@ It does not use a model to fill missing fields. A product page may yield sparse 
 - At most **two Libercrawl jobs** execute concurrently in the dashboard worker semaphore.
 - `MAX_JOB_SECONDS` defaults to **900 seconds**; effective allowed values are **60–3,600 seconds**.
 - Batch jobs process URLs one after another; errors are recorded against the job.
-- Cancel can interrupt an in-process job and attempts to cancel a engine-side crawl when a crawl ID is available.
+- Cancel can interrupt an in-process job and attempts to cancel an engine-side crawl when a crawl ID is available.
 - Dashboard process restarts mark queued or running jobs as **interrupted**. They are not resumed automatically.
 
 ## Supported URLs

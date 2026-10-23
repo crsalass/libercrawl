@@ -1,6 +1,8 @@
-# GitHub publishing checklist — Libercrawl v1.1.3
+# GitHub publication review — Libercrawl public edition
 
-**Name changed to Libercrawl.** Another open-source crawler uses the similar name `LibreCrawl` at https://librecrawl.com/. This avoids the exact same spelling but is **not a trademark clearance**. See `PRE_PUBLICATION_RISK_REVIEW.md` before publishing.
+Repository: [crsalass/libercrawl](https://github.com/crsalass/libercrawl). Publication is a separate, explicitly approved step; a local documentation review does not authorize commits, pushes, merges, or releases.
+
+**Name changed to Libercrawl.** Another open-source crawler uses the similar name `LibreCrawl` at https://librecrawl.com/. This spelling difference does **not establish name clearance**. See [the existing risk review](PRE_PUBLICATION_RISK_REVIEW.md) before publishing.
 
 ## Suggested GitHub About description (after name clearance)
 
@@ -8,7 +10,7 @@
 
 Suggested topics: `self-hosted`, `web-scraping`, `open-source`, `docker`, `fastapi`, `sqlite`, `web-crawler`, `data-extraction`, `local-first`.
 
-## Before the first public commit
+## Before a source release
 
 - [ ] Review the remaining Libercrawl / LibreCrawl name similarity and check relevant trademark registers; seek professional advice where necessary.
 - [ ] Publish this **GitHub Edition**, not any personal/private build.
@@ -22,18 +24,22 @@ Suggested topics: `self-hosted`, `web-scraping`, `open-source`, `docker`, `fasta
 - [ ] Manually review `git status` / `git diff --cached` and search for secrets, personal data and private identifiers.
 - [ ] Read `docs/PRE_PUBLICATION_RISK_REVIEW.md` for unresolved claims/security/legal considerations.
 
-## Commit procedure (only after review)
+## Local review commands
+
+For an existing checkout, review the branch and changes without reinitializing Git or changing remotes:
 
 ```bash
-git init -b main
-git add .
-git status --short
-git diff --cached --stat
-# Inspect any unexpected path or secrets before committing.
-git commit -m "docs: prepare local-first web extraction release"
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
-git push -u origin main
+git status --short --branch
+git diff --stat
+git diff --check
+git diff
 ```
+
+Run `python -m pytest -q` with the development dependencies installed and a disposable `APP_DATA_DIR`, then `node --check app/static/app.js`. Refresh the SHA-256 entries for changed public files and new assets, excluding the manifest itself. Use `sha256sum -c SHA256SUMS.txt` on Linux/WSL2 with checkout bytes free of line-ending conversion. Checksums detect changed bytes; this manifest is not a signed authenticity guarantee.
+
+Use only screenshots of the public edition, with a clear account of empty, offline, or fixture states. Preserve [screenshot provenance](assets/README.md), and never include a personal installation, secrets, scraped customer data, or fabricated successful jobs.
+
+Commit, push, merge, and release commands require separate approval after review. No such commands are part of this checklist's local verification.
 
 ## Draft release notes
 

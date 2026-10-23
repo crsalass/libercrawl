@@ -144,6 +144,19 @@ wsl -d Ubuntu
 
 Then `docker ps` should work. Docker group membership is root-equivalent; use caution.
 
+## Docker daemon is not running under WSL2
+
+Inside Ubuntu, check the init process and Docker service:
+
+```bash
+ps -p 1 -o comm=
+sudo systemctl status docker --no-pager
+sudo systemctl enable --now docker
+docker ps
+```
+
+If `systemctl` reports that systemd is not the init system, follow [Microsoft's WSL systemd guide](https://learn.microsoft.com/en-us/windows/wsl/systemd). Preserve any existing `/etc/wsl.conf` settings when enabling `[boot]` / `systemd=true`. Restart WSL from PowerShell after saving; `wsl --shutdown` stops all running distributions, so save work first. Do not install a second Docker daemon or reset volumes to resolve this error.
+
 ## Docker pulls fail: `lookup registry-1.docker.io` / DNS timeout
 
 Test DNS and network connectivity inside Ubuntu:
@@ -197,7 +210,7 @@ Docker normally reuses successful cached layers. If this repeats, investigate th
 
 ## Nothing appears after clicking Inspect
 
-This was addressed in the public v1.1.3 frontend: Inspect should open/focus the details area or display a visible error. Refresh the page with `Ctrl+Shift+R`, verify the backend is reachable, and check the browser console for an error. To verify the job exists:
+The public frontend should open/focus the details area or display a visible error. Refresh the page with `Ctrl+Shift+R`, verify the backend is reachable, and check the browser console for an error. To verify the job exists:
 
 ```bash
 curl -s http://127.0.0.1:3210/api/jobs
