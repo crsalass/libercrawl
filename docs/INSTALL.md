@@ -114,7 +114,7 @@ The installer:
 
 1. Confirms prerequisites and Docker Compose.
 2. Clones the pinned engine release **`v2.11.0`**, verifies its pinned Git commit, and stores it in `engine/` (ignored by Git).
-3. Applies a compatibility patch to run RabbitMQ health checks under the correct `rabbitmq` user.
+3. Applies an idempotent compatibility patch that runs RabbitMQ health checks under the correct `rabbitmq` user and allows a 120-second startup grace period for slower machines (`interval: 10s`, `timeout: 10s`, `retries: 10`). The startup scripts reapply this patch to existing installations after a code update.
 4. Creates `engine/.env` configured for local use, including `NUQ_BACKEND=pg` (PostgreSQL).
 5. Creates `.env`, sets up `.venv`, and installs dashboard Python packages.
 

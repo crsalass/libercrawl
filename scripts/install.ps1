@@ -13,14 +13,9 @@ if (-not (Test-Path 'engine/.git')) {
 $headCommit = (git -C engine rev-parse HEAD).Trim()
 $tagCommit = 'ef12eb36b2f3382838dfe0a0c1a5add3d5df7fe5'
 if ($LASTEXITCODE -ne 0 -or $headCommit -ne $tagCommit) { throw "Unexpected upstream checkout: '$headCommit'. Expected pinned v2.11.0." }
-# Patch pinned-release RabbitMQ health probe without deleting or replacing volumes.
-$composeFile = 'engine/docker-compose.yaml'
-$compose = Get-Content -Raw $composeFile
-$before = 'test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]'
-$after = 'test: ["CMD", "gosu", "rabbitmq", "rabbitmq-diagnostics", "-q", "check_running"]'
-if ($compose.Contains($before)) {
-    [System.IO.File]::WriteAllText((Resolve-Path $composeFile).Path, $compose.Replace($before, $after))
-}
+# Apply the shared RabbitMQ fix. Fail if the pinned upstream Compose layout changes.
+& python scripts/patch_engine.py engine/docker-compose.yaml
+if ($LASTEXITCODE -ne 0) { throw 'RabbitMQ compatibility patch failed; inspect the pinned upstream Compose file.' }
 if (Test-Path 'engine/.env') {
     (Get-Content 'engine/.env') -replace '^NUQ_BACKEND=postgres$', 'NUQ_BACKEND=pg' | Set-Content 'engine/.env'
 }

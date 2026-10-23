@@ -87,6 +87,40 @@ docker ps --filter 'name=embercrawl-engine-rabbitmq'
 docker exec -u rabbitmq embercrawl-engine-rabbitmq-1 rabbitmq-diagnostics -q check_running
 ```
 
+### RabbitMQ starts, but Compose reports it as unhealthy
+
+On slower machines, the pinned upstream Compose file's **5-second** startup grace period can expire before RabbitMQ finishes booting. The logs can show `not running or has not fully booted yet` followed by a successful diagnostic (`ExitCode 0`). This is a startup race, not necessarily a cookie permissions error.
+
+The public compatibility patch now also sets RabbitMQ's health check to:
+
+```yaml
+    healthcheck:
+      test: ["CMD", "gosu", "rabbitmq", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+```
+
+`start_period` is a **grace period for failed checks**, not a mandatory two-minute delay. The patch runs during both installation and normal startup. To apply it manually without reinstalling or deleting volumes:
+
+```bash
+bash scripts/patch-engine.sh
+docker compose --project-directory engine -p embercrawl-engine \
+  -f engine/docker-compose.yaml config --quiet
+docker compose --project-directory engine -p embercrawl-engine \
+  -f engine/docker-compose.yaml up -d --no-deps rabbitmq
+```
+
+Then examine the running health status and recent probes:
+
+```bash
+docker inspect --format '{{.State.Health.Status}}' embercrawl-engine-rabbitmq-1
+docker inspect --format '{{range .State.Health.Log}}{{println .ExitCode .Output}}{{end}}' embercrawl-engine-rabbitmq-1
+```
+
+The patch only modifies the ignored, locally downloaded `engine/docker-compose.yaml`; it does not alter your private files or Docker volumes. If the upstream Compose format is unexpected, the patch exits with an error rather than silently changing another service.
+
 Do not delete RabbitMQ state or loosen its cookie permissions broadly without confirming the exact failure.
 
 ## FoundationDB init says `Database already exists`
